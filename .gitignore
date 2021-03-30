@@ -1,0 +1,5 @@
+build/
+dist/
+mythic.egg-info/
+mythic_c2_container.egg-info/
+mythic_c2_container/.DS_Store
