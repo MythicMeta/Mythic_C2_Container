@@ -258,6 +258,11 @@ async def get_file(request):
     }
 
 
+async def exit_container(request):
+    print_flush("[-] Container tasked to exit...")
+    sys.exit(1)
+
+
 async def write_file(request):
     global container_files_path
     global running
@@ -466,12 +471,13 @@ async def mythic_service(debug: bool):
         if debug:
             print_flush("Creating task to consume in mythic_service")
         task = queue.consume(callback)
-        await sync_classes()
+        
         print("Listening for c2.modify.{}.#".format(hostname))
         if debug:
             print_flush("Creating task for connect_and_consume_rpc from mythic_service")
         task4 = asyncio.ensure_future(connect_and_consume_rpc(main_config, debug))
         task5 = asyncio.ensure_future(connect_and_consume_mythic_rpc(main_config, debug))
+        await sync_classes()
         if debug:
             print_flush("Waiting for all tasks to finish in mythic_service")
         result = await asyncio.gather(task, task4, task5)
