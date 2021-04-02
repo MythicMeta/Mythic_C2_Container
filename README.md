@@ -12,7 +12,7 @@ pip install mythic-c2-container
 
 ## How to use
 
-Version 0.0.16 of the `mythic_c2_container` package supports version 2.2.* of the Mythic project.
+Version 0.0.17 of the `mythic_c2_container` package supports version 2.2.* of the Mythic project.
 
 For the main execution of the heartbeat and service functionality, simply import and start the service:
 ```

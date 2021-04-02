@@ -415,6 +415,8 @@ async def connect_and_consume_mythic_rpc(main_config: dict, debug):
         task = await queue.consume(
             partial(rabbit_mythic_c2_rpc_callback, channel.default_exchange)
         )
+        # wait to sync classes with mythic until we have a way to get messages back
+        await sync_classes()
         result = await asyncio.wait_for(task, None)
     except Exception as e:
         print_flush("Exception in connect_and_consume_mythic_rpc .consume: {}".format(str(e)))
@@ -477,7 +479,6 @@ async def mythic_service(debug: bool):
             print_flush("Creating task for connect_and_consume_rpc from mythic_service")
         task4 = asyncio.ensure_future(connect_and_consume_rpc(main_config, debug))
         task5 = asyncio.ensure_future(connect_and_consume_mythic_rpc(main_config, debug))
-        await sync_classes()
         if debug:
             print_flush("Waiting for all tasks to finish in mythic_service")
         result = await asyncio.gather(task, task4, task5)
