@@ -9,6 +9,7 @@ class ParameterType(Enum):
     Array = "Array"
     Date = "Date"
     Dictionary = "Dictionary"
+    Boolean = "Boolean"
 
 
 class C2ProfileParameter:
@@ -83,11 +84,6 @@ class C2Profile:
 
     @property
     @abstractmethod
-    def mythic_encrypts(self):
-        pass
-
-    @property
-    @abstractmethod
     def parameters(self):
         pass
 
@@ -96,7 +92,6 @@ class C2Profile:
             "name": self.name,
             "description": self.description,
             "author": self.author,
-            "mythic_encrypts": self.mythic_encrypts,
             "is_p2p": self.is_p2p,
             "is_server_routed": self.is_server_routed,
             "params": [x.to_json() for x in self.parameters]

@@ -3,6 +3,7 @@ import asyncio
 import uuid
 import json
 from enum import Enum
+from .config import settings
 
 
 class MythicStatus(Enum):
@@ -56,14 +57,11 @@ class MythicBaseRPC:
         self.loop = asyncio.get_event_loop()
 
     async def connect(self):
-        config_file = open("/Mythic/mythic/rabbitmq_config.json", "rb")
-        main_config = json.loads(config_file.read().decode("utf-8"))
-        config_file.close()
         self.connection = await connect_robust(
-            host=main_config["host"],
-            login=main_config["username"],
-            password=main_config["password"],
-            virtualhost=main_config["virtual_host"],
+            host=settings.get("host", "127.0.0.1"),
+            login=settings.get("username", "mythic_user"),
+            password=settings.get("password", "mythic_password"),
+            virtualhost=settings.get("virtual_host", "mythic_vhost"),
         )
         self.channel = await self.connection.channel()
         self.callback_queue = await self.channel.declare_queue(exclusive=True)

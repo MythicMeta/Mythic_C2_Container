@@ -14,6 +14,7 @@ import traceback
 from . import C2ProfileBase
 from importlib import import_module, invalidate_caches
 from functools import partial
+from .config import settings
 
 credentials = None
 connection_params = None
@@ -25,7 +26,7 @@ output = ""
 exchange = None
 container_files_path = None
 
-container_version = "2"
+container_version = "3"
 
 
 def deal_with_stdout():
@@ -103,7 +104,7 @@ async def callback(message: aio_pika.IncomingMessage):
                 print("Unknown command: {}".format(command))
                 sys.stdout.flush()
         except Exception as e:
-            print("Failed overall message processing: " + str(e))
+            print("Failed overall message processing: " +  str(sys.exc_info()[-1].tb_lineno) + " " +str(e))
             sys.stdout.flush()
 
 async def get_status(request):
@@ -231,6 +232,9 @@ async def sync_classes():
             ),
         )
     except Exception as e:
+        print_flush(
+                "Exception trying to send message back to container for sync_classes! " + str(sys.exc_info()[-1].tb_lineno) + " " + str(e)
+            )
         await send_status(
             message='{"message": "Error while syncing info: {}"}'.format(
                 str(traceback.format_exc())
@@ -320,11 +324,11 @@ async def rabbit_c2_rpc_callback(
             )
         except Exception as e:
             print_flush(
-                "Exception trying to send message back to container for rpc! " + str(e)
+                "Exception trying to send message back to container for rpc! " + str(sys.exc_info()[-1].tb_lineno) + " " + str(e)
             )
 
 
-async def connect_and_consume_rpc(main_config: dict, debug):
+async def connect_and_consume_rpc(debug):
     connection = None
     global hostname
     while connection is None:
@@ -332,10 +336,10 @@ async def connect_and_consume_rpc(main_config: dict, debug):
             if debug:
                 print_flush("Connecting to rabbitmq in connect_and_consume_rpc")
             connection = await aio_pika.connect_robust(
-                host=main_config["host"],
-                login=main_config["username"],
-                password=main_config["password"],
-                virtualhost=main_config["virtual_host"]
+                host=settings.get("host", "127.0.0.1"),
+                login=settings.get("username", "mythic_user"),
+                password=settings.get("password", "mythic_password"),
+                virtualhost=settings.get("virtual_host", "mythic_vhost"),
             )
             if debug:
                 print_flush("Successfully connected in connect_and_consume_rpc")
@@ -357,7 +361,7 @@ async def connect_and_consume_rpc(main_config: dict, debug):
             partial(rabbit_c2_rpc_callback, channel.default_exchange)
         )
     except Exception as e:
-        print_flush("Exception in connect_and_consume_rpc .consume: {}".format(str(e)))
+        print_flush("Exception in connect_and_consume_rpc .consume: {}".format(str(sys.exc_info()[-1].tb_lineno) + " " + str(e)))
 
 
 async def rabbit_mythic_c2_rpc_callback(
@@ -378,12 +382,12 @@ async def rabbit_mythic_c2_rpc_callback(
             )
         except Exception as e:
             print(
-                "[-] Exception trying to send message back to container for rpc! " + str(e)
+                "[-] Exception trying to send message back to container for rpc! " + str(sys.exc_info()[-1].tb_lineno) + " " + str(e)
             )
             sys.stdout.flush()
 
 
-async def connect_and_consume_mythic_rpc(main_config: dict, debug):
+async def connect_and_consume_mythic_rpc(debug):
     connection = None
     global hostname
     while connection is None:
@@ -391,10 +395,10 @@ async def connect_and_consume_mythic_rpc(main_config: dict, debug):
             if debug:
                 print_flush("Connecting to rabbitmq in connect_and_consume_mythic_rpc")
             connection = await aio_pika.connect_robust(
-                host=main_config["host"],
-                login=main_config["username"],
-                password=main_config["password"],
-                virtualhost=main_config["virtual_host"]
+                host=settings.get("host", "127.0.0.1"),
+                login=settings.get("username", "mythic_user"),
+                password=settings.get("password", "mythic_password"),
+                virtualhost=settings.get("virtual_host", "mythic_vhost"),
             )
             if debug:
                 print_flush("Successfully connected in connect_and_consume_mythic_rpc")
@@ -417,9 +421,8 @@ async def connect_and_consume_mythic_rpc(main_config: dict, debug):
         )
         # wait to sync classes with mythic until we have a way to get messages back
         await sync_classes()
-        result = await asyncio.wait_for(task, None)
     except Exception as e:
-        print_flush("Exception in connect_and_consume_mythic_rpc .consume: {}".format(str(e)))
+        print_flush("Exception in connect_and_consume_mythic_rpc .consume: {}".format(str(sys.exc_info()[-1].tb_lineno) + " " + str(e)))
 
 
 async def mythic_service(debug: bool):
@@ -427,15 +430,11 @@ async def mythic_service(debug: bool):
     global exchange
     global container_files_path
     connection = None
-    config_file = open("rabbitmq_config.json", "rb")
-    main_config = json.loads(config_file.read().decode("utf-8"))
-    config_file.close()
-    if main_config["name"] == "hostname":
+    hostname = settings.get("name", "hostname")
+    if hostname == "hostname":
         hostname = socket.gethostname()
-    else:
-        hostname = main_config["name"]
     container_files_path = pathlib.Path(
-        os.path.abspath(main_config["container_files_path"])
+        os.path.abspath(settings.get("container_files_path", "/Mythic/"))
     )
     container_files_path = container_files_path / "c2_code"
     while connection is None:
@@ -443,10 +442,10 @@ async def mythic_service(debug: bool):
             if debug:
                 print_flush("Connecting to rabbitmq from mythic_service")
             connection = await aio_pika.connect_robust(
-                host=main_config["host"],
-                login=main_config["username"],
-                password=main_config["password"],
-                virtualhost=main_config["virtual_host"],
+                host=settings.get("host", "127.0.0.1"),
+                login=settings.get("username", "mythic_user"),
+                password=settings.get("password", "mythic_password"),
+                virtualhost=settings.get("virtual_host", "mythic_vhost"),
             )
             if debug:
                 print_flush("Successfully connected to rabbitmq from mythic_service")
@@ -477,8 +476,8 @@ async def mythic_service(debug: bool):
         print("Listening for c2.modify.{}.#".format(hostname))
         if debug:
             print_flush("Creating task for connect_and_consume_rpc from mythic_service")
-        task4 = asyncio.ensure_future(connect_and_consume_rpc(main_config, debug))
-        task5 = asyncio.ensure_future(connect_and_consume_mythic_rpc(main_config, debug))
+        task4 = asyncio.ensure_future(connect_and_consume_rpc(debug))
+        task5 = asyncio.ensure_future(connect_and_consume_mythic_rpc(debug))
         if debug:
             print_flush("Waiting for all tasks to finish in mythic_service")
         result = await asyncio.gather(task, task4, task5)
@@ -489,22 +488,18 @@ async def mythic_service(debug: bool):
 
 async def heartbeat_loop(debug: bool):
     connection = None
-    config_file = open("rabbitmq_config.json", "rb")
-    main_config = json.loads(config_file.read().decode("utf-8"))
-    config_file.close()
-    if main_config["name"] == "hostname":
+    hostname = settings.get("name", "hostname")
+    if hostname == "hostname":
         hostname = socket.gethostname()
-    else:
-        hostname = main_config["name"]
     while connection is None:
         try:
             if debug:
                 print_flush("Connecting to rabbitmq from heartbeat_loop")
             connection = await aio_pika.connect_robust(
-                host=main_config["host"],
-                login=main_config["username"],
-                password=main_config["password"],
-                virtualhost=main_config["virtual_host"],
+                host=settings.get("host", "127.0.0.1"),
+                login=settings.get("username", "mythic_user"),
+                password=settings.get("password", "mythic_password"),
+                virtualhost=settings.get("virtual_host", "mythic_vhost"),
             )
             if debug:
                 print_flush("Successfully connected to rabbitmq from heartbeat_loop")
@@ -533,7 +528,7 @@ async def heartbeat_loop(debug: bool):
                 )
                 await asyncio.sleep(10)
             except Exception as e:
-                print_flush("Exception in heartbeat_loop trying to send heartbeat: " + str(e))
+                print_flush("Exception in heartbeat_loop trying to send heartbeat: " + str(sys.exc_info()[-1].tb_lineno) + " " + str(e))
                 # if we get an exception here, break out to the bigger loop and try to connect again
                 break
 
@@ -542,3 +537,6 @@ def start_service_and_heartbeat(debug=False):
     loop = asyncio.get_event_loop()
     asyncio.gather(mythic_service(debug), heartbeat_loop(debug))
     loop.run_forever()
+
+def get_version_info():
+    print_flush("[*] Mythic C2 Profile Version: " + container_version)
