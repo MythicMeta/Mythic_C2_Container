@@ -97,32 +97,3 @@ class C2Profile:
             "params": [x.to_json() for x in self.parameters]
         }
 
-
-class RPCStatus(Enum):
-    Success = "success"
-    Error = "error"
-
-
-class RPCResponse:
-    def __init__(self, status: RPCStatus = None, response: str = None):
-        self.status = status
-        self.response = response
-
-    @property
-    def status(self):
-        return self._status
-
-    @status.setter
-    def status(self, status):
-        self._status = status
-
-    @property
-    def response(self):
-        return self._response
-
-    @response.setter
-    def response(self, response):
-        self._response = response
-
-    def to_json(self):
-        return {"status": self.status.value, "response": self.response}

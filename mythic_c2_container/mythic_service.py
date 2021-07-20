@@ -26,7 +26,7 @@ output = ""
 exchange = None
 container_files_path = None
 
-container_version = "3"
+container_version = "4"
 
 
 def deal_with_stdout():
@@ -47,12 +47,16 @@ def import_all_c2_functions():
     # Get file paths of all modules.
     modules = glob.glob("c2_functions/*.py")
     invalidate_caches()
-    for x in modules:
-        if not x.endswith("__init__.py") and x[-3:] == ".py":
-            module = import_module("c2_functions." + pathlib.Path(x).stem, package=None)
-            for el in dir(module):
-                if "__" not in el:
-                    globals()[el] = getattr(module, el)
+    try:
+        for x in modules:
+            if not x.endswith("__init__.py") and x[-3:] == ".py":
+                module = import_module("c2_functions." + pathlib.Path(x).stem, package=None)
+                for el in dir(module):
+                    if "__" not in el:
+                        globals()[el] = getattr(module, el)
+    except Exception as e:
+        print_flush("[-] Failed to parse c2_functions code:\n" + str(e))
+        sys.exit(1)
 
 
 async def send_status(message="", routing_key=""):

@@ -12,7 +12,7 @@ pip install mythic-c2-container
 
 ## How to use
 
-Version 0.0.22 of the `mythic_c2_container` package supports version 2.2.2 of the Mythic project. This container reports to mythic as version 3 (PyPi version 0.0.22).
+Version 0.0.23 of the `mythic_c2_container` package supports version 2.2.12 of the Mythic project. This container reports to mythic as version 4 (PyPi version 0.0.23).
 
 For the main execution of the heartbeat and service functionality, simply import and start the service:
 ```
@@ -24,7 +24,8 @@ You can also pass `debug=True` to the start_service_and_heartbeat() function to 
 For a C2 Profile's code to leverage the C2ProfileBase or RPC functionality:
 ```
 from mythic_c2_container import C2ProfileBase
-from mythic_c2_container import MythicCallbackRPC
+from mythic_c2_container.MythicRPC import MythicRPC
+response = await MythicRPC().execute("function name", **kwargs)
 ```
 
 You can get the Mythic version of this package with the `get_version_info` function:
