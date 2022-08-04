@@ -10,7 +10,7 @@ README = (HERE / "README.md").read_text()
 # This call to setup() does all the work
 setup(
     name="mythic_c2_container",
-    version="0.0.23",
+    version="0.0.30",
     description="Functionality for Mythic C2 Containers",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -25,7 +25,6 @@ setup(
     ],
     packages=["mythic_c2_container"],
     include_package_data=True,
-    install_requires=["aio_pika", "dynaconf"],
-    entry_points={
-    },
+    install_requires=["aio_pika==6.8.0", "dynaconf"],
+    entry_points={},
 )
