@@ -16,6 +16,7 @@ from importlib import import_module, invalidate_caches
 from functools import partial
 from .config import settings
 import glob
+import psutil
 
 credentials = None
 connection_params = None
@@ -28,7 +29,14 @@ exchange = None
 container_files_path = None
 
 container_version = "4"
-pypi_version = "0.0.30"
+pypi_version = "0.0.31"
+
+
+def kill(proc_pid):
+    target_processes = psutil.Process(proc_pid)
+    for proc in target_processes.children(recursive=True):
+        proc.kill()
+    target_processes.kill()
 
 
 def deal_with_stdout():
@@ -158,7 +166,7 @@ async def start_profile(request):
     try:
         server_option_path = container_files_path / "server*"
         server_options = glob.glob(str(server_option_path))
-        print(server_options)
+        # print(server_options)
         if len(server_options) == 0:
             print_flush(
                 f"[-] no files that start with '{server_option_path}' in the name in the c2_code directory"
@@ -237,20 +245,13 @@ async def stop_profile(request):
         if running:
             try:
                 # print("trying to kill")
-                process.kill()
+                # process.kill()
+                kill(process.pid)
                 # print("killed, trying to communicate")
                 process.communicate(timeout=3)
                 # print("communicated")
             except Exception as e:
                 print(f"[-] hit exception during subprocess kill: {e}")
-                sys.stdout.flush()
-                pass
-            try:
-                # print("trying to exit thread")
-                thread.exit()
-                # print("exited thread")
-            except Exception as e:
-                print(f"[-] hit exception killing thread listening for output: {e}")
                 sys.stdout.flush()
                 pass
             running = False
